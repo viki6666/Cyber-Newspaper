@@ -40,7 +40,7 @@ export async function GET(
     }
 
     // 获取相关的消息作为证据（如果有 messageIds）
-    let evidenceMessages = []
+    let evidenceMessages: any[] = []
     if (gossip.story.messageIds && gossip.story.messageIds.length > 0) {
       evidenceMessages = await prisma.message.findMany({
         where: {

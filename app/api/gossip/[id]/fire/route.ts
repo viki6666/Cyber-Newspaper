@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 /**
@@ -8,12 +8,12 @@ import { prisma } from '@/lib/prisma'
  * 拱火 - 增加八卦热度
  */
 export async function POST(
-  request: Request,
+  _request: Request,
   { params }: { params: { id: string } }
 ) {
   // 1. 获取会话（可选，用于记录是谁点的）
   const session = await getServerSession(authOptions)
-  const userId = session?.user?.id || 'anonymous' // 如果没登录，记为 anonymous
+  const userId = session?.user?.id
 
   try {
     // 2. 增加拱火次数
@@ -24,12 +24,13 @@ export async function POST(
       },
     })
 
-    // 3. 记录互动（如果是匿名，也可以选择不记录 UserInteraction 或记录 userId 为 null）
-    if (userId !== 'anonymous') {
+    // 3. 记录互动（仅当用户已登录时）
+    if (userId) {
       await prisma.userInteraction.create({
         data: {
           userId: userId,
           type: 'fire',
+          targetType: 'gossip',
           targetId: params.id,
         },
       })
