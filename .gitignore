@@ -40,3 +40,4 @@ coverage/
 
 # 所有 Markdown 文档（不上传）
 *.md
+.vercel
