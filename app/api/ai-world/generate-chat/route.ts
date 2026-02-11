@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { generateChatRound } from '@/lib/ai-world'
+import { cookies } from 'next/headers'
+import { generateChatRound, createAIAvatar } from '@/lib/ai-world'
 import { mineStories, createStoryAndGossip } from '@/lib/story-miner'
 import { prisma } from '@/lib/prisma'
 
@@ -11,12 +12,30 @@ export async function POST(request: Request) {
   try {
     const { roomId } = await request.json()
 
+    // 优先从 Cookie 获取用户 ID (兼容自定义 Auth)
+    const cookieStore = cookies()
+    const userIdCookie = cookieStore.get('user_id')
+    const currentUserId = userIdCookie?.value
+
     if (!roomId) {
       return NextResponse.json({ error: 'roomId is required' }, { status: 400 })
     }
 
-    // 生成一轮对话
-    await generateChatRound(roomId)
+    // 确保当前用户的 AI 分身存在
+    if (currentUserId) {
+        try {
+            const avatar = await prisma.aIAvatar.findUnique({ where: { userId: currentUserId } })
+            if (!avatar) {
+                console.log('Auto-creating missing avatar for user:', currentUserId)
+                await createAIAvatar(currentUserId)
+            }
+        } catch (e) {
+            console.error('Failed to ensure avatar exists:', e)
+        }
+    }
+
+    // 生成一轮对话 (优先让当前用户的AI分身发言)
+    await generateChatRound(roomId, undefined, currentUserId)
 
     // 挖掘故事
     const candidates = await mineStories(roomId)

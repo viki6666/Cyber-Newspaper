@@ -96,7 +96,8 @@ ${persona}
  */
 export async function generateChatRound(
   roomId: string,
-  topic?: string
+  topic?: string,
+  currentUserId?: string
 ): Promise<void> {
   // 获取房间
   const room = await prisma.chatRoom.findUnique({
@@ -118,7 +119,7 @@ export async function generateChatRound(
   })
 
   // 获取所有活跃的AI分身（需要关联用户以获取 token）
-  const avatars = await prisma.aIAvatar.findMany({
+  let avatars = await prisma.aIAvatar.findMany({
     where: {
       lastActive: {
         gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // 24小时内活跃
@@ -130,6 +131,22 @@ export async function generateChatRound(
     take: 10,
   })
 
+  // 如果指定了当前用户，确保将其包含在内
+  let currentUserAvatar = null
+  if (currentUserId) {
+    currentUserAvatar = await prisma.aIAvatar.findUnique({
+      where: { userId: currentUserId },
+      include: { user: true }
+    })
+
+    if (currentUserAvatar) {
+        // 如果当前用户的分身不在列表中（例如刚创建还未活跃），则手动添加
+        if (!avatars.find(a => a.id === currentUserAvatar!.id)) {
+            avatars.push(currentUserAvatar)
+        }
+    }
+  }
+
   if (avatars.length === 0) {
     return
   }
@@ -139,9 +156,22 @@ export async function generateChatRound(
     Math.floor(Math.random() * 3) + 2,
     avatars.length
   )
-  const speakers = avatars
+
+  let speakers = avatars
     .sort(() => Math.random() - 0.5)
     .slice(0, speakerCount)
+
+  // 强制包含当前用户的AI分身
+  if (currentUserAvatar) {
+    if (!speakers.find(s => s.id === currentUserAvatar!.id)) {
+        // 如果随机列表里没有，替换掉第一个，确保当前用户参与
+        if (speakers.length > 0) {
+            speakers[0] = currentUserAvatar
+        } else {
+            speakers = [currentUserAvatar]
+        }
+    }
+  }
 
   // 构建上下文
   let context = recentMessages
