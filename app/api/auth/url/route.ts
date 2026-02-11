@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getAuthUrl } from '@/lib/secondme'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/auth/url
  * 获取 SecondMe OAuth 授权 URL

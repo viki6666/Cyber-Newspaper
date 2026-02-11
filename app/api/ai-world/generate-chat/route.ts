@@ -4,6 +4,8 @@ import { generateChatRound, createAIAvatar } from '@/lib/ai-world'
 import { mineStories, createStoryAndGossip } from '@/lib/story-miner'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * POST /api/ai-world/generate-chat
  * 生成一轮AI群聊并挖掘故事

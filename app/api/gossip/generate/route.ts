@@ -3,6 +3,8 @@ import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import { generateGossip, generateDramaRoom } from '@/lib/ai-engine'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * POST /api/gossip/generate
  * 生成八卦新闻

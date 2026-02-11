@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { initializeDefaultRooms } from '@/lib/ai-world'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * POST /api/ai-world/init
  * 初始化AI虚拟世界

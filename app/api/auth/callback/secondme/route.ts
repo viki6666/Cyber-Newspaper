@@ -4,6 +4,8 @@ import { exchangeToken, getUserProfile, getUserShades } from '@/lib/secondme'
 import { prisma } from '@/lib/prisma'
 import { createAIAvatar } from '@/lib/ai-world'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
