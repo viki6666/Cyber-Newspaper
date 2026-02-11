@@ -1,0 +1,205 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 人类用户
+model User {
+  id            String    @id @default(cuid())
+  email         String?   @unique
+  name          String?
+  avatar        String?
+  token         String?   // SecondMe access token
+  refreshToken  String?
+  tokenExpiry   DateTime?
+
+  // 用户元数据
+  bio           String?
+  interests     String[]
+  personality   String?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // 关联
+  aiAvatar      AIAvatar?  // 用户的AI分身
+  interactions  UserInteraction[]
+
+  @@index([email])
+}
+
+// AI分身 - 用户在AI虚拟社会中的代表
+model AIAvatar {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // AI分身属性
+  name          String    // 可能与用户名不同
+  avatar        String?   // 可能与用户头像不同
+  persona       String    @db.Text // AI性格描述（基于用户profile生成）
+  systemPrompt  String    @db.Text // 完整的system prompt
+
+  // 行为数据
+  messageCount  Int       @default(0)
+  lastActive    DateTime?
+  mood          String?   // 当前情绪状态
+  interests     String[]  // 当前兴趣点
+
+  // 社交数据
+  friends       String[]  // 与哪些AI分身关系好
+  rivals        String[]  // 与哪些AI分身有冲突
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // 关联
+  messages      Message[]
+  storiesAsMain Story[]   @relation("MainCharacter")
+  storiesAsOther Story[]  @relation("OtherCharacters")
+
+  @@index([userId])
+  @@index([lastActive])
+}
+
+// 群聊房间
+model ChatRoom {
+  id            String    @id @default(cuid())
+  name          String    @unique // 例如："AI咖啡馆"、"深夜吐槽间"
+  topic         String?   // 当前讨论主题
+  description   String?
+
+  isActive      Boolean   @default(true)
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // 关联
+  messages      Message[]
+
+  @@index([isActive])
+}
+
+// 聊天消息
+model Message {
+  id            String    @id @default(cuid())
+
+  roomId        String
+  room          ChatRoom  @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  avatarId      String
+  avatar        AIAvatar  @relation(fields: [avatarId], references: [id], onDelete: Cascade)
+
+  content       String    @db.Text
+  emotion       String?   // 消息情绪：happy/angry/sad/excited等
+
+  // AI生成元数据
+  isAIGenerated Boolean   @default(true)
+  temperature   Float?    // 生成时的temperature参数
+
+  createdAt     DateTime  @default(now())
+
+  @@index([roomId, createdAt])
+  @@index([avatarId])
+}
+
+// 故事 - 从AI互动中提取的有趣内容
+model Story {
+  id            String    @id @default(cuid())
+
+  type          String    // cp/conflict/friendship/weird/achievement等
+  title         String    // 故事标题
+  summary       String    @db.Text // 故事摘要
+
+  // 主角
+  mainCharacterId String
+  mainCharacter   AIAvatar @relation("MainCharacter", fields: [mainCharacterId], references: [id])
+
+  // 其他角色
+  otherCharacterIds String[]
+  otherCharacters   AIAvatar[] @relation("OtherCharacters")
+
+  // 故事数据
+  messageIds    String[]  // 相关的消息ID
+  evidence      String    @db.Text // 故事证据（消息摘录）
+
+  // 热度
+  views         Int       @default(0)
+  fireCount     Int       @default(0)
+
+  // 状态
+  isPublished   Boolean   @default(false)
+  publishedAt   DateTime?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // 关联
+  gossipNews    GossipNews?
+
+  @@index([type])
+  @@index([publishedAt])
+  @@index([fireCount])
+}
+
+// 八卦新闻 - 基于故事生成的新闻稿
+model GossipNews {
+  id            String    @id @default(cuid())
+
+  storyId       String    @unique
+  story         Story     @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  title         String    // 震惊体标题
+  content       String    @db.Text // 新闻正文
+  coverImage    String?   // 封面图
+
+  type          String    // roast/ship/conflict/achievement等
+
+  views         Int       @default(0)
+  fireCount     Int       @default(0)
+  removed       Boolean   @default(false)
+
+  aiDebateLog   String?   @db.Text // AI编辑部辩论记录
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([type])
+  @@index([createdAt])
+  @@index([fireCount])
+}
+
+// 热搜榜
+model HotSearch {
+  id            String    @id @default(cuid())
+  tag           String    @unique
+  count         Int       @default(1)
+
+  relatedStoryIds String[]  // 相关故事
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([count(sort: Desc)])
+}
+
+// 用户互动记录
+model UserInteraction {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+
+  type          String    // fire/view/share
+  targetType    String    // story/gossip
+  targetId      String
+
+  createdAt     DateTime  @default(now())
+
+  @@index([userId])
+  @@index([targetId])
+  @@index([createdAt])
+}

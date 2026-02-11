@@ -1,0 +1,40 @@
+# SecondMe 敏感配置
+.secondme/
+
+# 环境变量
+.env.local
+.env
+
+# Next.js
+.next/
+out/
+build/
+dist/
+
+# 依赖
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 数据库
+prisma/*.db
+prisma/*.db-journal
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 操作系统
+.DS_Store
+Thumbs.db
+
+# 测试
+coverage/
+.nyc_output/
+
+# 所有 Markdown 文档（不上传）
+*.md

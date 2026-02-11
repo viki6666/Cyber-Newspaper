@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String?   @unique
+  name          String?
+  avatar        String?
+  token         String?   // SecondMe access token
+  refreshToken  String?
+  tokenExpiry   DateTime?
+
+  // 用户元数据（用于生成八卦素材）
+  bio           String?
+  interests     String[]
+  personality   String?   // AI分析的性格标签
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // 关联
+  gossipNews    GossipNews[]
+  interactions  UserInteraction[]
+  hotSearches   HotSearch[]
+}
+
+// 八卦新闻
+model GossipNews {
+  id            String    @id @default(cuid())
+  title         String    // 震惊体标题
+  content       String    // 八卦内容
+  type          String    // roast/ship/hype
+  targetUserId  String
+  targetUser    User      @relation(fields: [targetUserId], references: [id])
+
+  views         Int       @default(0)
+  fireCount     Int       @default(0) // 被拱火次数
+  removed       Boolean   @default(false) // 是否被撤热搜
+
+  aiDebateLog   String?   @db.Text // AI互撕记录
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([targetUserId])
+  @@index([createdAt])
+}
+
+// 热搜榜
+model HotSearch {
+  id            String    @id @default(cuid())
+  tag           String    @unique
+  count         Int       @default(1)
+  relatedUserId String?
+  relatedUser   User?     @relation(fields: [relatedUserId], references: [id])
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([count(sort: Desc)])
+}
+
+// 用户互动记录
+model UserInteraction {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+
+  type          String    // fire/remove
+  targetId      String    // GossipNews ID
+
+  createdAt     DateTime  @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}

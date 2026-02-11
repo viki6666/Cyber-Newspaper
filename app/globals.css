@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-white text-black;
+  }
+}
+
+/* 波普艺术效果 */
+.pop-shadow {
+  box-shadow: 8px 8px 0 rgba(255, 0, 110, 0.3);
+}
+
+.pop-border {
+  border: 4px solid #000;
+}
+
+/* 震惊体标题样式 */
+.shock-title {
+  @apply font-headline text-4xl md:text-6xl;
+  text-shadow:
+    3px 3px 0 #FF006E,
+    6px 6px 0 #06FFA5;
+  letter-spacing: 0.05em;
+}
+
+/* 跑马灯动画 */
+.marquee {
+  animation: marquee 20s linear infinite;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
