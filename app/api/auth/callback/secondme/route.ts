@@ -89,6 +89,8 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL('/', request.url))
   } catch (error) {
     console.error('OAuth callback error:', error)
-    return NextResponse.redirect(new URL('/login?error=auth_failed', request.url))
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    // 将具体错误信息带回前端
+    return NextResponse.redirect(new URL(`/login?error=auth_failed&details=${encodeURIComponent(errorMessage)}`, request.url))
   }
 }
