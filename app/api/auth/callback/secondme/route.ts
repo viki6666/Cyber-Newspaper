@@ -16,7 +16,8 @@ export async function GET(request: Request) {
 
   try {
     // 换取 token
-    const tokenData = await exchangeToken(code, `${process.env.NEXTAUTH_URL}/api/auth/callback/secondme`)
+    const redirectUri = `${new URL(request.url).origin}/api/auth/callback/secondme`
+    const tokenData = await exchangeToken(code, redirectUri)
 
     // 获取用户资料
     const userProfile = await getUserProfile(tokenData.access_token)
@@ -89,8 +90,6 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL('/', request.url))
   } catch (error) {
     console.error('OAuth callback error:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    // 将具体错误信息带回前端
-    return NextResponse.redirect(new URL(`/login?error=auth_failed&details=${encodeURIComponent(errorMessage)}`, request.url))
+    return NextResponse.redirect(new URL('/login?error=auth_failed', request.url))
   }
 }
